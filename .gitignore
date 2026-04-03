@@ -1,0 +1,49 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Build
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# Logs / outputs
+*.log
+*.csv
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# temp / junk folders
+old_dump/
+new/
+infra/include/old/
+
+# Temp files
+*.tmp
+*.out
+
+# Experiments
+experiments/
+
+
+# jupyter cache
+.ipynb_checkpoints/
+
+
+*.o
+*.a
+*.so
+
+compile_commands.json
+
+# notes
+structure.txt
+
+agents/noise.txt
