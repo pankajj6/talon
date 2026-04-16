@@ -7,7 +7,7 @@ A C++ Discrete Event Simulation (DES) designed to model financial market microst
 * **Custom Array-Based LOB:** Uses a contiguous array-based architecture instead of standard library maps or linked lists. This ensures O(log N) price discovery with O(1) memory locality, maximizing L1 cache hits.
 * **Cache-Targeted DOD:** Built with Data-Oriented Design. While it runs efficiently on standard hardware (e.g., a 20MB cache laptop), deploying this on a CPU with a massive L3 cache allows the engine to keep the order book and agent pools almost entirely on-chip, resulting in blistering execution speeds.
 * **Deterministic Sequencing:** Every event is assigned a `seq_num` to break ties in same-nanosecond arrivals, ensuring the simulation remains perfectly reproducible.
-* **Raw Research Scans:** See the `research/scans/` directory for the original handwritten mathematical frameworks and architectural notes detailing the engine's L1/L2/L3 latency modeling and kernel sequencing.
+* **Architecture Design:** The research/architecture/ directory contains the original first-principle derivations. These notes document the core logic of the simulation universe—from solving the "Same Timestamp" collision problem to modeling physical-layer latency boundaries (L1/L2/L3),etc.
 
 ## The Kernel: 3-Mode Orchestrator
 The Kernel manages a global Custom Priority Queue (Min-Heap), sequencing every event by nanosecond-precision timestamps. It operates as a three-mode state machine:
