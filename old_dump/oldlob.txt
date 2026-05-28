@@ -1,0 +1,80 @@
+#pragma once
+
+#include <map>
+#include <stack>
+#include <functional>
+#include <unordered_map>
+#include <cstdint>
+#include "order.h"    // Order struct
+#include "status.h"   // Status enum
+#include "config.h"   // POOL_SIZE
+
+struct price_level {
+    int head = -1;
+    int tail = -1;
+    // adding volume at price level for market state updates without walking the list every time.
+    int64_t total_liquidity = 0; // done. now add logic of this every where .
+    // remember we need to update this in cancel in egine specifically , 
+    //as they dont call add_order and delete_order , as that is why. becoz
+    // it is not full order delete or insert . so update quanity there.
+};
+
+
+// class order_storage_pool{
+
+//     public:
+
+//     Order storage_pool[Config::ORDER_POOL_SIZE];
+
+//     std::stack<int> free_index_stack;
+
+//     order_storage_pool(); 
+
+//     Status move_next_order(price_level& orders_list);
+
+//     void add_order(LOB& lob, Order& new_order);
+
+//     void delete_order(LOB& lob, price_level& p, uint32_t order_index);
+
+//     void deallocate(int index);
+
+// };
+
+class LOB{
+
+  
+    friend class Engine;
+
+private:
+    uint64_t clock = 0;
+    Order storage_pool[Config::ORDER_POOL_SIZE];
+    std::stack<int> free_index_stack;
+    std::map<uint64_t, price_level, std::greater<uint64_t>> bid;
+    std::map<uint64_t, price_level> ask;
+    std::unordered_map<uint64_t, uint32_t> orders_by_Id;
+
+
+public:
+
+    LOB() {
+        for (int i = 0; i < Config::ORDER_POOL_SIZE; i++) {
+            free_index_stack.push(i);
+        }
+    }
+
+
+    Status move_next_order(price_level& orders_list);
+    void add_order(Order& new_order);
+    void delete_order(price_level& p, uint32_t order_index);
+    void deallocate(int index);
+
+    //standard lob method:
+    uint64_t best_bid() const {return bid.empty() ? 0 : bid.begin()->first;}
+    uint64_t best_ask() const {return ask.empty() ? 0 : ask.begin()->first;}
+
+    void remove_price_level(uint64_t price, Order_Side side){
+        if (side == Order_Side::Buy) bid.erase(price);
+        else ask.erase(price);
+    }
+
+};
