@@ -162,7 +162,6 @@ using ITCHPayload = std::variant<
 // ============================================================
 
 // One per fill event : sent to BOTH passive and aggressive agent.
-
 struct FillNotification {
     uint64_t order_id;
     int32_t  filled_qty;

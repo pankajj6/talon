@@ -1,0 +1,26 @@
+struct noise_agent{
+
+    int last_order_mid_price = 0; // mid price at time he send his order.
+    // means at time of decision , not after it hit exchange and all ..-- 
+    //--.. he only know current_mid_price and he saves that, hoping he will get filled at that by this market order . 
+    //he beleive the market orders are instantly filled . 
+   // well can be useful if later we need to extend logic then just noise.
+
+    type x ; // he will get from distribution
+
+}
+
+
+void noise_react( brokersnapshot , noise_agent){
+
+// produce noise. //conditions are typical noise . sentiment based .
+
+    if(p_buy > x){  // for eg . p_buy > 0.50 
+        send_market_order(BUY , qty) ; 
+    }
+
+    if(p_buy < x ){
+        send_market_order(SELL , qty);
+    }
+
+}

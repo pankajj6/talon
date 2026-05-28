@@ -54,22 +54,36 @@ Status LOB::add_order(Order& new_order)
     free_index_stack.pop();
 
     auto price = new_order.price;
+    price_level* ptr = nullptr;
 
-    auto res = (new_order.side == Order_Side::Buy)
-           ? bid.get_index_and_level(price)
-           : ask.get_index_and_level(price);
-
-    auto idx = res.first;
-    auto ptr = res.second;
-
-    if(ptr == nullptr)
-    {
-        if(new_order.side == Order_Side::Buy)
-            ptr = bid.push_level( price_level{-1, -1, 0, 0} ); // get ptr back , for modification.
-        else
-            ptr = ask.push_level( price_level{-1, -1, 0, 0} );
+    // Safely get or create the price level
+    if (new_order.side == Order_Side::Buy) {
+        ptr = bid.get_level(price);
+        if (ptr == nullptr) {
+            price_level new_lvl;
+            new_lvl.price = price; // USE THE REAL PRICE, NOT -1!
+            new_lvl.head = -1;
+            new_lvl.tail = -1;
+            new_lvl.total_liquidity = 0;
+            ptr = bid.push_level(new_lvl);
+        }
+    } else {
+        ptr = ask.get_level(price);
+        if (ptr == nullptr) {
+            price_level new_lvl;
+            new_lvl.price = price; // USE THE REAL PRICE, NOT -1!
+            new_lvl.head = -1;
+            new_lvl.tail = -1;
+            new_lvl.total_liquidity = 0;
+            ptr = ask.push_level(new_lvl);
+        }
     }
 
+    // Double-check just in case the book genuinely filled up
+    if (ptr == nullptr) {
+        free_index_stack.push(free_index); // Return the index to the pool
+        return Status::FAILURE;
+    }
 
     // Insert at tail of price level
     if (ptr->head == -1)
@@ -77,7 +91,7 @@ Status LOB::add_order(Order& new_order)
         // First order at this price
         ptr->head           = free_index;
         ptr->tail           = free_index;
-        ptr->total_liquidity += new_order.quantity; // update total liquidity at this price level
+        ptr->total_liquidity += new_order.quantity; 
         new_order.next    = -1;
         new_order.prev    = -1;
         storage_pool[free_index] = new_order;
@@ -89,8 +103,8 @@ Status LOB::add_order(Order& new_order)
         last_order.next    = free_index;
         new_order.prev     = ptr->tail;               
         new_order.next     = -1;
-        ptr->tail            = free_index;     
-        ptr->total_liquidity += new_order.quantity; // update total liquidity at this price level        
+        ptr->tail          = free_index;     
+        ptr->total_liquidity += new_order.quantity;      
         storage_pool[free_index] = new_order;
     }
 
@@ -99,6 +113,63 @@ Status LOB::add_order(Order& new_order)
 
     return Status::SUCCESS;
 }
+// Status LOB::add_order(Order& new_order)
+// {
+//     // THE HARD SHIELD:
+//     if (free_index_stack.empty()) {
+//         std::cout << "CRITICAL WARNING: LOB Order Pool is FULL! Dropping order.\n";
+//         return Status::FAILURE; 
+//     }
+
+//     int free_index = free_index_stack.top();
+//     free_index_stack.pop();
+
+//     auto price = new_order.price;
+
+//     auto res = (new_order.side == Order_Side::Buy)
+//            ? bid.get_index_and_level(price)
+//            : ask.get_index_and_level(price);
+
+//     auto idx = res.first;
+//     auto ptr = res.second;
+
+//     if(ptr == nullptr)
+//     {
+//         if(new_order.side == Order_Side::Buy)
+//             ptr = bid.push_level( price_level{-1, -1, 0, 0} ); // get ptr back , for modification.
+//         else
+//             ptr = ask.push_level( price_level{-1, -1, 0, 0} );
+//     }
+
+
+//     // Insert at tail of price level
+//     if (ptr->head == -1)
+//     {
+//         // First order at this price
+//         ptr->head           = free_index;
+//         ptr->tail           = free_index;
+//         ptr->total_liquidity += new_order.quantity; // update total liquidity at this price level
+//         new_order.next    = -1;
+//         new_order.prev    = -1;
+//         storage_pool[free_index] = new_order;
+//     }
+//     else
+//     {
+//         // Append to tail
+//         Order& last_order  = storage_pool[ptr->tail];
+//         last_order.next    = free_index;
+//         new_order.prev     = ptr->tail;               
+//         new_order.next     = -1;
+//         ptr->tail            = free_index;     
+//         ptr->total_liquidity += new_order.quantity; // update total liquidity at this price level        
+//         storage_pool[free_index] = new_order;
+//     }
+
+//     // register in id->index map for cancel/replace lookups
+//     orders_by_Id[new_order.order_id] = static_cast<uint32_t>(free_index);
+
+//     return Status::SUCCESS;
+// }
 
 
 void LOB::delete_order(price_level& p, uint32_t order_index)

@@ -5,7 +5,7 @@
 #include "config.h"
 #include "status.h"
 #include "engine.h"
-
+#include <iostream>
 
 void Engine::process_ouch_request(Event&  event,
                               LOB&   lob,
@@ -83,11 +83,64 @@ void Engine::process_limit_order(Event&  event,
     l_order.agent_tier  = event.agent_tier;
     l_order.agent_index = event.agent_index;
 
+    // if (incoming.side == Order_Side::Buy) // BUY
+    // {
+    //     std::cout << "[TRACER] Processing BUY Side. Order Qty: " << l_order.quantity << std::endl;
+        
+    //     while (l_order.quantity > 0 && lob.best_ask() != 0 && lob.best_ask() <= l_order.price)
+    //     {
+    //         std::cout << "[TRACER] Entering fill loop..." << std::endl;
+    //         uint64_t best_ask = lob.best_ask();
+    //         auto* lvl = lob.ask.get_level(best_ask);
+            
+    //         if (lvl == nullptr) {
+    //             std::cout << "[FATAL] best_ask returned " << best_ask << " but get_level is NULL!" << std::endl;
+    //             exit(1);
+    //         }
+            
+    //         std::cout << "[TRACER] Dereferencing front order..." << std::endl;
+    //         Order& front = lob.storage_pool[lvl->head];
+
+    //         if (l_order.quantity < front.quantity) {
+    //             std::cout << "[TRACER] Partial fill of resting order..." << std::endl;
+    //             front.quantity -= l_order.quantity;
+    //             lob.clock += Config::PT_ORDER_FILL;
+    //             // ... your push_fill_pair logic ...
+    //             l_order.quantity = 0;
+    //             return;
+    //         }
+    //         else {
+    //             std::cout << "[TRACER] Full fill of resting order..." << std::endl;
+    //             // ... your push_fill_pair logic ...
+    //             Status s = lob.move_next_order(*lvl);
+    //             if (s == Status::FAILURE) {
+    //                 std::cout << "[TRACER] Erasing price level..." << std::endl;
+    //                 lob.ask.erase_level(best_ask); 
+    //                 if (lob.best_ask() != 0 && lob.best_ask() <= l_order.price)
+    //                     lob.clock += Config::PT_LEVEL_WALK;
+    //             }
+    //         }
+    //     }
+    //     if (l_order.quantity > 0) {
+    //         std::cout << "[TRACER] Adding order to LOB..." << std::endl;
+    //         lob.clock += Config::PT_ADD_ORDER;
+    //         Status status = lob.add_order(l_order);
+            
+    //         std::cout << "[TRACER] Order added. Status = " << (int)status << std::endl;
+            
+    //         if (status == Status::SUCCESS) {
+    //             // ... your push_specific_ouch and push_order_added_itch logic ...
+    //         }
+    //         else {
+    //             std::cout << "[TRACER] LOB Full! Rejecting order..." << std::endl;
+    //             // ... your push_specific_ouch reject logic ...
+    //         }
+    //     }    
+    // }
     if (incoming.side == Order_Side::Buy) // BUY
     {
-        while (l_order.quantity > 0
-                && lob.best_ask() != 0
-                && lob.best_ask() <= l_order.price)
+
+        while (l_order.quantity > 0 && lob.best_ask() != 0 && lob.best_ask() <= l_order.price)
         {
             uint64_t     best_ask = lob.best_ask();
             auto* lvl   = lob.ask.get_level(best_ask);
@@ -415,11 +468,33 @@ void Engine::process_update(Event&             event,
         return;
     }
 
+
     uint32_t order_index  = it->second;
     Order&  old_order  = lob.storage_pool[order_index];
     uint64_t old_price = old_order.price;
     int32_t  old_cancelled = old_order.quantity;
     Order_Side  side = old_order.side;
+
+    if(side == Order_Side::Buy){ /// new update . was a big flaw . we have to have a check
+        if(replace.new_price > lob.best_bid()){
+            push_specific_ouch(feed_hq,
+            event.agent_tier, event.agent_index, event.symbol,
+            SpecificOUCHPayload{ ReplaceRejected{
+                replace.old_order_id, Reason::invalid_price }},
+            lob.clock, seq_num, event.sequence_num);
+        return;  
+        }
+    }
+    else{
+        if(replace.new_price < lob.best_ask()){
+            push_specific_ouch(feed_hq,
+            event.agent_tier, event.agent_index, event.symbol,
+            SpecificOUCHPayload{ ReplaceRejected{
+                replace.old_order_id, Reason::invalid_price }},
+            lob.clock, seq_num, event.sequence_num);
+            return ;
+        }
+    }
 
     // Find price level of old order (same side logic as cancel)
     price_level* p = nullptr;

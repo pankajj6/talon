@@ -115,8 +115,8 @@ class PriceMap{
 
     //     }
       
-    auto* push_level(price_level p) {
-        if (end >= MAX_LEVELS) return; // Book full
+    price_level* push_level(price_level p) {
+        if (end >= MAX_LEVELS) return nullptr; // Book full
 
         int low = 0, high = end - 1;
         while (low <= high) {
@@ -209,8 +209,8 @@ private:
     Order storage_pool[Config::ORDER_POOL_SIZE];
     std::stack<int> free_index_stack;
 
-    PriceMap<true> bid;  // High prices first
-    PriceMap<false> ask; // Low prices first
+    PriceMap<true> bid{};  // High prices first
+    PriceMap<false> ask{}; // Low prices first
 
     std::unordered_map<uint64_t, uint32_t> orders_by_Id; // this can be millions , so we use unordered map.
 
