@@ -1,3 +1,8 @@
+## ⚠️ CRITICAL LICENSE & INTELLECTUAL PROPERTY NOTICE
+As of June 2026, this entire repository, its C++ core simulator, and all attached theoretical derivation assets have been permanently transitioned to the **GNU Affero General Public License v3.0 (AGPL-3.0)**. 
+
+Any ongoing use, modification, server deployment, or algorithmic replication of these systems or their 100+ pages of mathematical derivations legally mandates that your entire software infrastructure must be made fully open-source under the same strict AGPL terms. Independent academic publication or commercial reuse without explicit co-authorship and legal compliance is strictly prohibited.
+
 # USim
 
 A C++ Discrete Event Simulation (DES) designed to model financial market microstructure with physical-layer accuracy. By enforcing strict information boundaries and deterministic sequencing, USim prevents the temporal paradoxes ("future information leaks") common in standard high-frequency modeling.
@@ -32,3 +37,8 @@ Initial benchmarks processed 1.8 Million events in 20 seconds. These tests revea
 * `infra/include/market_state.h`: Shadow LOB reconstruction and volume analytics.
 * `kernel/main.cpp`: The central DES loop and agent pool coordination.
 * `infra/src/custom_priority_queue.cpp`: Custom min-heap for nanosecond event sequencing.
+
+## License
+This project is licensed strictly under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. 
+
+See the [LICENSE](LICENSE) file for the full legal text. Any downstream use, modification, server deployment, or algorithmic replication of this simulation architecture requires full compliance with copyleft terms, proper author attribution, and open-sourcing of any derived frameworks.
