@@ -93,9 +93,12 @@ void Engine::process_limit_order(Event&  event,
             auto* lvl   = lob.ask.get_level(best_ask);
             Order& front = lob.storage_pool[lvl->head];
 
-            if (l_order.quantity < front.quantity) {
+            if (l_order.quantity < front.quantity) 
+            {
+                
                 front.quantity -= l_order.quantity;
                 lob.clock += Config::PT_ORDER_FILL;
+
                 push_fill_pair(feed_hq,
                     front.order_id,
                     front.agent_tier, front.agent_index,
@@ -105,13 +108,16 @@ void Engine::process_limit_order(Event&  event,
                     0, incoming.side,
                     l_order.quantity, best_ask, event.symbol,
                     lob.clock, seq_num, event.sequence_num);
+
                 l_order.quantity = 0;
                 return;
             }
-            else {
+            else 
+            {
                 int32_t fill_qty = front.quantity;
                 int32_t aggr_rem = l_order.quantity - fill_qty;
                 lob.clock += Config::PT_ORDER_FILL;
+
                 push_fill_pair(feed_hq,
                     front.order_id,
                     front.agent_tier, front.agent_index,
@@ -121,9 +127,12 @@ void Engine::process_limit_order(Event&  event,
                     aggr_rem, incoming.side,
                     fill_qty, best_ask, event.symbol,
                     lob.clock, seq_num, event.sequence_num);
+
                 l_order.quantity -= fill_qty;
                 Status s = lob.move_next_order(*lvl);
-                if (s == Status::FAILURE) {
+
+                if (s == Status::FAILURE) 
+                {
                     // CHANGED: pass side to remove correct map side
                     lob.ask.erase_level(best_ask); // remove_price_level(best_ask, Order_Side::Sell); // ask side
                     if (lob.best_ask() != 0 && lob.best_ask() <= l_order.price)
@@ -131,10 +140,14 @@ void Engine::process_limit_order(Event&  event,
                 }
             }
         }
-        if (l_order.quantity > 0) {
+        if (l_order.quantity > 0) 
+        {
+
             lob.clock += Config::PT_ADD_ORDER;
             Status status = lob.add_order(l_order);
-            if (status == Status::SUCCESS) {
+
+            if (status == Status::SUCCESS) 
+            {
                 push_specific_ouch(feed_hq,
                     event.agent_tier, event.agent_index, event.symbol,
                     SpecificOUCHPayload{ OrderRestingNotification{
@@ -144,7 +157,8 @@ void Engine::process_limit_order(Event&  event,
             push_order_added_itch(feed_hq, l_order, event.symbol,
                                 lob.clock, seq_num, event.sequence_num);
             }
-            else { // look here the logic:
+            else 
+            { // look here the logic:
                 push_specific_ouch(feed_hq,
                     event.agent_tier, event.agent_index, event.symbol,
                     SpecificOUCHPayload{ OrderRejected{ l_order.order_id, Reason::lob_full }},
@@ -152,6 +166,7 @@ void Engine::process_limit_order(Event&  event,
             }
         }    
     }
+
     else // SELL
     {
         while (l_order.quantity > 0
@@ -162,9 +177,11 @@ void Engine::process_limit_order(Event&  event,
             auto* lvl = lob.bid.get_level(best_bid);
             Order& front = lob.storage_pool[lvl->head];
 
-            if (l_order.quantity < front.quantity) {
+            if (l_order.quantity < front.quantity) 
+            {
                 front.quantity -= l_order.quantity;
                 lob.clock += Config::PT_ORDER_FILL;
+
                 push_fill_pair(feed_hq,
                     front.order_id,
                     front.agent_tier, front.agent_index,
@@ -174,13 +191,16 @@ void Engine::process_limit_order(Event&  event,
                     0, incoming.side,
                     l_order.quantity, best_bid, event.symbol,
                     lob.clock, seq_num, event.sequence_num);
+
                 l_order.quantity = 0;
                 return;
             }
-            else {
+            else 
+            {
                 int32_t fill_qty = front.quantity;
                 int32_t aggr_rem = l_order.quantity - fill_qty;
                 lob.clock += Config::PT_ORDER_FILL;
+
                 push_fill_pair(feed_hq,
                     front.order_id,
                     front.agent_tier, front.agent_index,
@@ -190,6 +210,7 @@ void Engine::process_limit_order(Event&  event,
                     aggr_rem, incoming.side,
                     fill_qty, best_bid, event.symbol,
                     lob.clock, seq_num, event.sequence_num);
+
                 l_order.quantity -= fill_qty;
                 Status s = lob.move_next_order(*lvl);
                 if (s == Status::FAILURE) {
@@ -199,20 +220,26 @@ void Engine::process_limit_order(Event&  event,
                 }
             }
         }
-        if (l_order.quantity > 0) {
+
+        if (l_order.quantity > 0) 
+        {
             lob.clock += Config::PT_ADD_ORDER;
             Status status= lob.add_order(l_order);
-            if (status == Status::SUCCESS) {
+
+            if (status == Status::SUCCESS) 
+            {
                 push_specific_ouch(feed_hq,
                     event.agent_tier, event.agent_index, event.symbol,
                     SpecificOUCHPayload{ OrderRestingNotification{
                         l_order.order_id, l_order.price,
                         l_order.quantity, l_order.side }},
                 lob.clock, seq_num, event.sequence_num);
-            push_order_added_itch(feed_hq, l_order, event.symbol,
-                                lob.clock, seq_num, event.sequence_num);
+
+                push_order_added_itch(feed_hq, l_order, event.symbol,
+                                    lob.clock, seq_num, event.sequence_num);
             }
-            else { // look here the logic:
+            else 
+            {
                     push_specific_ouch(feed_hq,
                         event.agent_tier, event.agent_index, event.symbol,
                         SpecificOUCHPayload{ OrderRejected{ l_order.order_id, Reason::lob_full }},

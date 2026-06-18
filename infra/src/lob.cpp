@@ -39,6 +39,10 @@ Status LOB::move_next_order(price_level& orders_list)// Also means removing curr
         // New head has no predecessor
         storage_pool[next_index].prev = -1;
 
+        // remove the old front id from map also.
+        auto id = front_order.order_id ;
+        orders_by_Id.erase(id);
+
         return Status::SUCCESS;
     }
 

@@ -30,67 +30,67 @@ std::vector<InstitutionalAgent>  inst_pool;
 
 void update_agent_on_fill(AgentTier tier, uint32_t index, const FillNotification& fill)
 {
-    // ADDED: actual inventory and cash update in fixed-point
-    int64_t trade_value = (int64_t)fill.filled_qty * (int64_t)fill.price;
-    bool is_buy = (fill.side == Order_Side::Buy);
+    // // ADDED: actual inventory and cash update in fixed-point
+    // int64_t trade_value = (int64_t)fill.filled_qty * (int64_t)fill.price;
+    // bool is_buy = (fill.side == Order_Side::Buy);
 
-    if (tier == AgentTier::HFT && index < hft_pool.size()) {
-        hft_pool[index].inventory += is_buy ?  fill.filled_qty : -fill.filled_qty;
-        hft_pool[index].cash      += is_buy ? -trade_value     :  trade_value;
+    // if (tier == AgentTier::HFT && index < hft_pool.size()) {
+    //     hft_pool[index].inventory += is_buy ?  fill.filled_qty : -fill.filled_qty;
+    //     hft_pool[index].cash      += is_buy ? -trade_value     :  trade_value;
 
-    // Free the tracking slot if the order is completely filled!
-        if (fill.remaining_qty == 0) {
-            for (uint8_t i = 0; i < hft_pool[index].open_order_count; i++) {
-                if (hft_pool[index].open_order_ids[i] == fill.order_id) {
-                    // Swap with the last element and shrink count (O(1) deletion)
-                    hft_pool[index].open_order_ids[i] = hft_pool[index].open_order_ids[--hft_pool[index].open_order_count];
-                    hft_pool[index].open_order_ids[hft_pool[index].open_order_count] = 0;
-                    break;
-                }
-            }
-        }
-    }
-    else if (tier == AgentTier::RETAIL && index < retail_pool.size()) {
-        retail_pool[index].inventory += is_buy ?  fill.filled_qty : -fill.filled_qty;
-        retail_pool[index].cash      += is_buy ? -trade_value     :  trade_value;
-        if (fill.remaining_qty == 0) retail_pool[index].has_open_order = false;
-    }
+    // // Free the tracking slot if the order is completely filled!
+    //     if (fill.remaining_qty == 0) {
+    //         for (uint8_t i = 0; i < hft_pool[index].open_order_count; i++) {
+    //             if (hft_pool[index].open_order_ids[i] == fill.order_id) {
+    //                 // Swap with the last element and shrink count (O(1) deletion)
+    //                 hft_pool[index].open_order_ids[i] = hft_pool[index].open_order_ids[--hft_pool[index].open_order_count];
+    //                 hft_pool[index].open_order_ids[hft_pool[index].open_order_count] = 0;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
+    // else if (tier == AgentTier::RETAIL && index < retail_pool.size()) {
+    //     retail_pool[index].inventory += is_buy ?  fill.filled_qty : -fill.filled_qty;
+    //     retail_pool[index].cash      += is_buy ? -trade_value     :  trade_value;
+    //     if (fill.remaining_qty == 0) retail_pool[index].has_open_order = false;
+    // }
 }
 
 void update_agent_on_cancel(AgentTier tier, uint32_t index, const CancelAccepted& cancel)
 {
     
-    if (tier == AgentTier::HFT && index < hft_pool.size()) {
-        // NEW: Free the tracking slot when the engine confirms the cancel!
-        if (cancel.remaining_qty == 0) { 
-            for (uint8_t i = 0; i < hft_pool[index].open_order_count; i++) {
-                if (hft_pool[index].open_order_ids[i] == cancel.order_id) {
-                    hft_pool[index].open_order_ids[i] = hft_pool[index].open_order_ids[--hft_pool[index].open_order_count];
-                    hft_pool[index].open_order_ids[hft_pool[index].open_order_count] = 0;
-                    break;
-                }
-            }
-        }
-    }
+    // if (tier == AgentTier::HFT && index < hft_pool.size()) {
+    //     // NEW: Free the tracking slot when the engine confirms the cancel!
+    //     if (cancel.remaining_qty == 0) { 
+    //         for (uint8_t i = 0; i < hft_pool[index].open_order_count; i++) {
+    //             if (hft_pool[index].open_order_ids[i] == cancel.order_id) {
+    //                 hft_pool[index].open_order_ids[i] = hft_pool[index].open_order_ids[--hft_pool[index].open_order_count];
+    //                 hft_pool[index].open_order_ids[hft_pool[index].open_order_count] = 0;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
     
-    if (tier == AgentTier::RETAIL && index < retail_pool.size()) {
-        if (cancel.remaining_qty == 0) retail_pool[index].has_open_order = false;
-    }
-    // (void)cancel;
+    // if (tier == AgentTier::RETAIL && index < retail_pool.size()) {
+    //     if (cancel.remaining_qty == 0) retail_pool[index].has_open_order = false;
+    // }
+    // // (void)cancel;
 }
 
 void update_agent_on_resting(AgentTier tier, uint32_t index, const OrderRestingNotification& r)
 {
-    if (tier == AgentTier::RETAIL && index < retail_pool.size()) {
-        retail_pool[index].open_order_id  = r.order_id;
-        retail_pool[index].has_open_order = true;
-    }
-    (void)tier; (void)index; (void)r;
+    // if (tier == AgentTier::RETAIL && index < retail_pool.size()) {
+    //     retail_pool[index].open_order_id  = r.order_id;
+    //     retail_pool[index].has_open_order = true;
+    // }
+    // (void)tier; (void)index; (void)r;
 }
 
 void update_agent_on_replace(AgentTier tier, uint32_t index, ReplaceAccepted& replace)
 {
-    (void)tier; (void)index; (void)replace;
+    // (void)tier; (void)index; (void)replace;
 }
 
 // ============================================================
@@ -113,14 +113,14 @@ uint64_t get_agent_l2(AgentTier tier, uint32_t index)
 void optional_react_specific(AgentTier tier, uint32_t index, const Event& ev,
                              std::deque<Event>& rq, uint64_t& avail_id)
 {
-   if (tier == AgentTier::HFT && index < hft_pool.size()) {
-        MarketState ms(Symbol::AAPL); // Temporary dummy state for now
-        hft_react_specific(hft_pool[index], ev, ms, Symbol::AAPL, rq);
-    }
-    else if (tier == AgentTier::RETAIL && index < retail_pool.size()) {
-        // Placeholder: Currently Retail doesn't need to react instantly to a fill, // mistake . we need retail to react. to this instead after sleep , then other itch. (sp_event + 1) react when (sp_event+l1)-lastReact   < 1 (sleep window); else it reacts at t = sp_event+l1 ; when t > sleepTime.    
-        // but this safely catches their SPECIFIC_OUCH events for the future.
-    }
+//    if (tier == AgentTier::HFT && index < hft_pool.size()) {
+//         MarketState ms(Symbol::AAPL); // Temporary dummy state for now
+//         hft_react_specific(hft_pool[index], ev, ms, Symbol::AAPL, rq);
+//     }
+//     else if (tier == AgentTier::RETAIL && index < retail_pool.size()) {
+//         // Placeholder: Currently Retail doesn't need to react instantly to a fill, // mistake . we need retail to react. to this instead after sleep , then other itch. (sp_event + 1) react when (sp_event+l1)-lastReact   < 1 (sleep window); else it reacts at t = sp_event+l1 ; when t > sleepTime.    
+//         // but this safely catches their SPECIFIC_OUCH events for the future.
+//     }
 }
 
 // ============================================================
@@ -202,7 +202,7 @@ int main()
     BrokerSnapshot broker_snap; // we may need to merge all snaps of diff instruments. so -> bulk data (layers only ,not much details).
 
     //fair price model
-    FairPriceModel fair_model;
+    // FairPriceModel fair_model;
 
     //CSV logger
     SimLogger logger;
@@ -223,10 +223,10 @@ int main()
     }
 
     // seed the book with initial orders so HFTs have something to trade against
-    push_bootstrap_orders(*Global_SQ);
+    // push_bootstrap_orders(*Global_SQ);
 
     // schedule first fair price update at market open
-    push_fair_price_event(*Global_SQ, Config::MARKET_OPEN_NS);
+    // push_fair_price_event(*Global_SQ, Config::MARKET_OPEN_NS);
 
 
     // --- PROGRESS BAR SETUP ---
@@ -312,19 +312,19 @@ int main()
                 logger.maybe_log_pnl(event.timestamp);
 
                 // HFT agents react to every ITCH
-                for (auto& agent : hft_pool) {
-                    hft_react(agent, event, M_State_appl, reaction_queue);
-                    // timestamp is set inside the function. using l1+l2. IMP.
-                }
+                // for (auto& agent : hft_pool) {
+                //     hft_react(agent, event, M_State_appl, reaction_queue);
+                //     // timestamp is set inside the function. using l1+l2. IMP.
+                // }
 
-                // retail agents react with sleep-cycle filter
-                for (auto& agent : retail_pool) {
-                    retail_react(agent, event.timestamp, broker_snap, M_State_appl, reaction_queue); // check if we can prevent passing market state , maybe just what is needed.
-                }
+                // // retail agents react with sleep-cycle filter
+                // for (auto& agent : retail_pool) {
+                //     retail_react(agent, event.timestamp, broker_snap, M_State_appl, reaction_queue); // check if we can prevent passing market state , maybe just what is needed.
+                // }
 
-                for (auto& a : inst_pool) {
-                    inst_react(a, event.timestamp, M_State_appl, reaction_queue);
-                }
+                // for (auto& a : inst_pool) {
+                //     inst_react(a, event.timestamp, M_State_appl, reaction_queue);
+                // }
 
                 break;
             }
@@ -398,6 +398,7 @@ int main()
                 r.sequence_num = seq_number++;
                 Global_SQ->push(r);
             }
+            reaction_queue.clear();
         }
 
         // Mode 1 output: engine events go straight to queue
@@ -405,6 +406,7 @@ int main()
             for (auto& f : feed_hq) {
                 Global_SQ->push(f);
             }
+            feed_hq.clear();
         }
     }
 
