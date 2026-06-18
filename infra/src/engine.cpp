@@ -268,14 +268,19 @@ void Engine::process_market_order(Event&             event,
 
     if (m_order.side == Order_Side::Buy)
     {
-        while (m_order.quantity > 0) {
+        while (m_order.quantity > 0 && lob.best_ask() !=0 ) 
+        {
             uint64_t best_ask = lob.best_ask();
-            if (best_ask == 0) break; // book empty
+            // if (best_ask == 0) break; // book empty
+
             auto* lvl   = lob.ask.get_level(best_ask);
             Order& front = lob.storage_pool[lvl->head];
-            if (m_order.quantity < front.quantity) {
+
+            if (m_order.quantity < front.quantity) 
+            {
                 front.quantity -= m_order.quantity;
                 lob.clock += Config::PT_ORDER_FILL;
+
                 push_fill_pair(feed_hq,
                     front.order_id,
                     front.agent_tier, front.agent_index,
@@ -285,12 +290,16 @@ void Engine::process_market_order(Event&             event,
                     0, m_order.side,
                     m_order.quantity, best_ask, event.symbol,
                     lob.clock, seq_num, event.sequence_num);
+
                 m_order.quantity = 0;
                 break;
-            } else {
+            }
+            else 
+            {
                 int32_t fill_qty = front.quantity;
                 int32_t rem      = m_order.quantity - fill_qty;
                 lob.clock += Config::PT_ORDER_FILL;
+
                 push_fill_pair(feed_hq,
                     front.order_id,
                     front.agent_tier, front.agent_index,
@@ -300,14 +309,17 @@ void Engine::process_market_order(Event&             event,
                     rem, m_order.side,
                     fill_qty, best_ask, event.symbol,
                     lob.clock, seq_num, event.sequence_num);
+
                 m_order.quantity -= fill_qty;
                 Status s = lob.move_next_order(*lvl);
+
                 if (s == Status::FAILURE) {
                     lob.ask.erase_level(best_ask);
                     lob.clock += Config::PT_LEVEL_WALK;
                 }
             }
         }
+
         if (m_order.quantity > 0) {
             push_specific_ouch(feed_hq,
                 event.agent_tier, event.agent_index, event.symbol,
@@ -315,16 +327,22 @@ void Engine::process_market_order(Event&             event,
                 lob.clock, seq_num, event.sequence_num);
         }
     }
+
     else // SELL
     {
-        while (m_order.quantity > 0) {
+        while (m_order.quantity > 0 && lob.best_bid() !=0) 
+        {
             uint64_t best_bid = lob.best_bid();
-            if (best_bid == 0) break;
+            // if (best_bid == 0) break;
+
             auto* lvl   = lob.bid.get_level(best_bid);
             Order& front = lob.storage_pool[lvl->head];
-            if (m_order.quantity < front.quantity) {
+
+            if (m_order.quantity < front.quantity) 
+            {
                 front.quantity -= m_order.quantity;
                 lob.clock += Config::PT_ORDER_FILL;
+
                 push_fill_pair(feed_hq,
                     front.order_id,
                     front.agent_tier, front.agent_index,
@@ -334,12 +352,16 @@ void Engine::process_market_order(Event&             event,
                     0, m_order.side,
                     m_order.quantity, best_bid, event.symbol,
                     lob.clock, seq_num, event.sequence_num);
+
                 m_order.quantity = 0;
                 break;
-            } else {
+            } 
+            else 
+            {
                 int32_t fill_qty = front.quantity;
                 int32_t rem      = m_order.quantity - fill_qty;
                 lob.clock += Config::PT_ORDER_FILL;
+
                 push_fill_pair(feed_hq,
                     front.order_id,
                     front.agent_tier, front.agent_index,
@@ -349,15 +371,19 @@ void Engine::process_market_order(Event&             event,
                     rem, m_order.side,
                     fill_qty, best_bid, event.symbol,
                     lob.clock, seq_num, event.sequence_num);
+
                 m_order.quantity -= fill_qty;
                 Status s = lob.move_next_order(*lvl);
+
                 if (s == Status::FAILURE) {
                     lob.bid.erase_level(best_bid);
                     lob.clock += Config::PT_LEVEL_WALK;
                 }
             }
         }
-        if (m_order.quantity > 0) {
+
+        if (m_order.quantity > 0) 
+        {
             push_specific_ouch(feed_hq,
                 event.agent_tier, event.agent_index, event.symbol,
                 SpecificOUCHPayload{ OrderRejected{ m_order.order_id, Reason::book_empty }},
@@ -375,6 +401,7 @@ void Engine::process_cancel( // here adding logic of updating price level liquid
     lob.clock += Config::PT_BASE;
 
     auto it = lob.orders_by_Id.find(cancel.order_id);
+
     if (it == lob.orders_by_Id.end()) {
         push_specific_ouch(feed_hq, event.agent_tier, event.agent_index, event.symbol,
             SpecificOUCHPayload{ CancelRejected{ cancel.order_id, Reason::orderId_NOT_Found}},
@@ -392,38 +419,48 @@ void Engine::process_cancel( // here adding logic of updating price level liquid
 
     int32_t max_qty = cancel.max_quantity;
 
-    if (max_qty > 0 && max_qty < order.quantity) {
+    if (max_qty > 0 && max_qty < order.quantity) 
+    {
         int32_t cancelled = order.quantity - max_qty;
         p->total_liquidity -= cancelled; // update total liquidity at this price level. imp. it does not happen else where like add_order or full delete.
+        
         order.quantity    = max_qty;
         lob.clock        += Config::PT_CANCEL;
+
         push_specific_ouch(feed_hq,
             event.agent_tier, event.agent_index, event.symbol,
             SpecificOUCHPayload{ CancelAccepted{ cancel.order_id, max_qty }},
             lob.clock, seq_num, event.sequence_num);
+
         push_order_cancelled_itch(feed_hq,
             cancel.order_id, order.price , cancelled, order.side,
             event.agent_tier, event.agent_index, event.symbol,
             lob.clock, seq_num, event.sequence_num);
     }
-    else if (max_qty == 0) {
+    
+    else if (max_qty == 0) // full order delete.
+    {
         int32_t cancelled = order.quantity;
         lob.clock        += Config::PT_CANCEL;
+
         lob.delete_order( *p, order_index); // here this inside already updates the total liquidity. we dont need to do here.
+        
         push_specific_ouch(feed_hq,
             event.agent_tier, event.agent_index, event.symbol,
             SpecificOUCHPayload{ CancelAccepted{ cancel.order_id, 0 }},
             lob.clock, seq_num, event.sequence_num);
+
         push_order_cancelled_itch(feed_hq,
             cancel.order_id, order.price , cancelled, order.side, 
             event.agent_tier, event.agent_index, event.symbol,
             lob.clock, seq_num, event.sequence_num);
     }
-    // else: max_qty >= current qty or negative — ignore
+    // else: max_qty >= current qty or negative - ignore
 }
 
 
-void Engine::process_update(Event&             event,
+void Engine::process_update
+                    (Event&            event,
                     ReplaceOrder&      replace,
                     LOB&               lob,
                     std::deque<Event>& feed_hq,
@@ -432,13 +469,15 @@ void Engine::process_update(Event&             event,
     lob.clock += Config::PT_BASE;
 
     auto it = lob.orders_by_Id.find(replace.old_order_id);
-    if (it == lob.orders_by_Id.end()) {
-        // CHANGED: ReplaceRejected with reason 0
+
+    if (it == lob.orders_by_Id.end()) 
+    {
         push_specific_ouch(feed_hq,
             event.agent_tier, event.agent_index, event.symbol,
             SpecificOUCHPayload{ ReplaceRejected{
                 replace.old_order_id, Reason::orderId_NOT_Found }},
             lob.clock, seq_num, event.sequence_num);
+
         return;
     }
 
@@ -458,7 +497,7 @@ void Engine::process_update(Event&             event,
     Order new_order;
     new_order.order_id    = replace.new_order_id;
     new_order.price       = replace.new_price;
-    new_order.quantity    = replace.new_quantity; // CHANGED: was new_order.new_quantity
+    new_order.quantity    = replace.new_quantity;
     new_order.side        = side;
     new_order.agent_tier  = old_order.agent_tier;
     new_order.agent_index = old_order.agent_index;
