@@ -3,16 +3,31 @@ venv/
 __pycache__/
 *.pyc
 *.ipynb
+*.py
 
-# Build
+# Python Virtual Environments & Jupyter
+abm_env/
+.ipynb_checkpoints/
+
+# Simulation Output Data & Logs
+*.csv
+*.bin
+
+# Rendered Visualizations & Plots
+*.png
+*.jpg
+
+# Build Directories
 build/
+bin/
+obj/
+
 CMakeFiles/
 CMakeCache.txt
 cmake-build-*/
 
 # Logs / outputs
 *.log
-*.csv
 
 # OS
 .DS_Store
