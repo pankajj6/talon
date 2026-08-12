@@ -17,6 +17,8 @@
 #include <random>
 #include <boost/unordered/unordered_flat_map.hpp>
 
+#include <chrono>
+
 // ============================================================
 // GLOBALS
 // ============================================================
@@ -139,6 +141,9 @@ int main()
     uint64_t events_processed = 0;
     uint64_t total_sim_time = Config::MARKET_CLOSE_NS - Config::MARKET_OPEN_NS;
     std::cout << "\nStarting Simulation Engine...\n";
+
+
+    auto start = std::chrono::high_resolution_clock::now() ;
 
     // ============================================================
     // MAIN LOOP
@@ -269,6 +274,21 @@ int main()
             feed_hq.clear();
         }
     }
+
+    //performence 
+    auto end = std::chrono::high_resolution_clock::now() ;
+    std::chrono::duration<double> d = end - start ;
+
+    std::cout << "Total Events: " << events_processed << std::endl ;
+    std::cout << "Total Time: " << d << std::endl ;
+    std::cout << "Total ZI agents: " << Config::total_zi << std::endl ;
+    std::cout << "Total MMakersagents: " << mm_pool.size() << std::endl ;
+    std::cout << "Total Momentum agents: " << mom_pool.size() << std::endl ;
+    std::cout << "Simulation Duration(in minutes): " << ((Config::MARKET_CLOSE_NS - Config::MARKET_OPEN_NS )/60000000000) << std::endl ;
+
+    std::cout << "ZI orders per sec: " << Config::order_rate << std::endl ;
+
+    std::cout << "Events/sec: " << events_processed/d.count() << std::endl ;
 
     std::cout << "\nSimulation complete. Output: sim_output.csv , lob_depth.csv\n";
 
