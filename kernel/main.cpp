@@ -11,6 +11,7 @@
 #include "market_state.h"     
 #include "broker_snapshot.h"
 
+#include "LookaheadLogger.hpp"
 #include "mm.h"
 #include "momentum.h"
 #include "zi.h"
@@ -99,6 +100,9 @@ int main()
 
     //CSV logger
     SimLogger logger;
+
+    // Instantiate the logger globally or within the Kernel/Evaluator setup
+    LookaheadLogger leakage_logger("lookahead_leakage_log.csv");
 
     // seed the book with initial orders so HFTs have something to trade against
     push_bootstrap_orders(engine , *Global_SQ);
@@ -195,6 +199,33 @@ int main()
                 // see here we use event.timestamp not lob.clock , as the market state is updated according to when itch comes , so that is the reason
                 logger.maybe_log(parser_lob, event.timestamp) ;
                 
+                auto scale_factor = static_cast<double>(parser_lob.TICK_SIZE*100) ;
+
+                // Call logger right before/during reactive agent evaluation
+                // Fetch Best Bid/Ask from Shadow(kernel maintained) LOB and Live Exchange LOB
+                double s_bid = (state.best_bid)/scale_factor ;
+                double s_ask = (state.best_ask)/scale_factor ;
+
+                auto it1 = engine.books[event.stock_locate].bid_map.begin() ;
+                auto it2 = engine.books[event.stock_locate].ask_map.begin() ;
+                
+                // Check if maps are empty before reading them
+                double e_bid = 0.0; 
+                if (!engine.books[event.stock_locate].bid_map.empty() ) {
+                    e_bid = static_cast<double>(it1->first) / scale_factor;
+                }
+
+                double e_ask = 0.0;
+                if (!engine.books[event.stock_locate].ask_map.empty()) {
+                    e_ask = static_cast<double>(it2->first) / scale_factor;
+                }
+
+                uint64_t event_ts = event.timestamp;
+                uint64_t exchange_clock = engine.books[event.stock_locate].clock ; // LOB clock time
+
+                // Log the comparison
+                leakage_logger.log_trigger(event_ts, exchange_clock, s_bid, s_ask, e_bid, e_ask);
+
                 for (auto& mm: mm_pool){
                     mm_react(mm, event, state.mid_price, reaction_queue, gen, seq_number,
                         available_order_id, parser_lob.TICK_SIZE) ;
