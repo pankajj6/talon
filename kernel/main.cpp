@@ -279,6 +279,7 @@ int main()
     auto end = std::chrono::high_resolution_clock::now() ;
     std::chrono::duration<double> d = end - start ;
 
+    std::cout << "\n" << std::endl ;
     std::cout << "Total Events: " << events_processed << std::endl ;
     std::cout << "Total Time: " << d << std::endl ;
     std::cout << "Total ZI agents: " << Config::total_zi << std::endl ;
