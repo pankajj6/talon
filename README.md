@@ -344,6 +344,20 @@ Execution efficiency measured via hardware performance counter profiling on the 
 | **Cache References** | $1.016 \times 10^9$ | L1/L2/L3 cache access requests |
 | **Cache Miss Rate** | **14.08%** ($143.16 \times 10^6$) | Strong memory locality from contiguous order pools |
 
+### Scalability Under Load
+
+To evaluate the resilience of the global discrete-event scheduler, the simulation was stress-tested across three population tiers over a 96-minute trading session.
+
+| Scale Tier | Active Agents | Aggregate ZI Order Rate | Total Events | Throughput |
+| :--- | :--- | :--- | :--- | :--- |
+| **Baseline** | 125 *(100 ZI, 20 MM, 5 Mom)* | 1,000 orders/sec | ~55.1 Million | **~5.44M events/sec** |
+| **Medium** | 1,150 *(1000 ZI, 100 MM, 50 Mom)* | 10,000 orders/sec | ~407.8 Million | **~3.92M events/sec** |
+| **High (Stress)**| 10,700 *(10k ZI, 500 MM, 200 Mom)* | 50,000 orders/sec | ~1.94 Billion | **~1.68M events/sec** |
+
+**Scaling Analysis:**
+
+The system degrades gracefully under extreme load. Moving from 55 million to nearly 2 billion scheduled events increases the depth of the global priority queue by orders of magnitude. Hardware profiling (`perf stat`) confirms that the throughput reduction at the highest tier is heavily tied to an increased L1 cache miss rate (rising to ~6.5%) due to the massive active memory footprint of 10,700 interacting agents. Maintaining ~1.68 million events/sec over a continuous 1.94 billion event run confirms the stability of the zero-allocation order pooling architecture.
+
 ---
 
 # Look-Ahead Leakage
