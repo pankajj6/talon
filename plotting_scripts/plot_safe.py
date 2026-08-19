@@ -26,8 +26,9 @@ if len(df) > 1500:
 FACTOR = 10000.0  # Converts 10,000 integer units to $1.00 USD
 df["time_sec"] = (df["timestamp"] - df["timestamp"].iloc[0]) / 1e9
 
-# --- ADD TO SKIP THE INITIAL WARMUP ---
-df = df[df["time_sec"] > 8800].reset_index(drop=True)
+# --- DYNAMIC WARMUP SLICE ---
+warmup_cutoff = len(df) // 10
+df = df.iloc[warmup_cutoff:].reset_index(drop=True)
 
 # Downsample to 1500 points to keep memory footprint tiny
 if len(df) > 1500:
