@@ -11,7 +11,6 @@
 #include "market_state.h"     
 #include "broker_snapshot.h"
 
-#include "LookaheadLogger.hpp"
 #include "mm.h"
 #include "momentum.h"
 #include "zi.h"
@@ -47,17 +46,17 @@ void push_bootstrap_orders(Engine<EngineMode::Simulation>& engine , CustomPriori
     Event e ;
     e.timestamp = Config::PRE_MARKET_NS + 1 ; 
     e.causal_parent_id = 0 ;    
-    
+
     for (int l=0; l<MAX_TICKERS ; l++) {    
         // locate code
         auto locate = static_cast<uint16_t>(l) ;
         // tick size
         auto tick = engine.books[locate].TICK_SIZE ;
         uint32_t bid = Config::BOOTSTRAP_BID ;
-        
+
         // Bid side : several levels below fair price
         for (int i = 0; i < 5; i++, bid -= tick) {
-            
+
             e.timestamp += 1 ;
             e.sequence_num = seq_number++ ;
             e.event_type  = EventType::OUCH ;
@@ -74,10 +73,10 @@ void push_bootstrap_orders(Engine<EngineMode::Simulation>& engine , CustomPriori
             e.timestamp += 1 ;
             e.sequence_num = seq_number++  ;
             e.event_type = EventType::OUCH ;
-            
+
             e.stock_locate = locate ;
             e.p.order_req = {available_order_id++ , ask , Config::BOOTSTRAP_QTY , 'S' , 0 } ;
-            
+
             gsq.push(e);
         }
     }
@@ -100,9 +99,6 @@ int main()
 
     //CSV logger
     SimLogger logger;
-
-    // Instantiate the logger globally or within the Kernel/Evaluator setup
-    LookaheadLogger leakage_logger("lookahead_leakage_log.csv");
 
     // seed the book with initial orders so HFTs have something to trade against
     push_bootstrap_orders(engine , *Global_SQ);
@@ -163,7 +159,7 @@ int main()
             if (event.timestamp >= Config::MARKET_OPEN_NS) {
                 progress = (double)(event.timestamp - Config::MARKET_OPEN_NS) / total_sim_time * 100.0;
             }
-            
+
             // \r overwrites the line. std::flush forces it to draw instantly.
             std::cout << "\r[ENGINE RUNNING] LOB Time: " << event.timestamp 
                       << " ns | Progress: " << progress << "% "
@@ -171,7 +167,7 @@ int main()
                       << std::flush;
         }
 
-        
+
 
         if (event.timestamp == 0 && event.sequence_num == 0) break;
 
@@ -191,50 +187,40 @@ int main()
             // ------------------------------------------------
             case EventType::ITCH:
             {
-            
+
                 // update market state from this ITCH
                 reconstruct_market_state(kernel_parser_engine , event);
 
                 update_broker_snapshot(broker_snap, parser_lob);
                 // see here we use event.timestamp not lob.clock , as the market state is updated according to when itch comes , so that is the reason
                 logger.maybe_log(parser_lob, event.timestamp) ;
-                
-                auto scale_factor = static_cast<double>(parser_lob.TICK_SIZE*100) ;
 
-                // Call logger right before/during reactive agent evaluation
-                // Fetch Best Bid/Ask from Shadow(kernel maintained) LOB and Live Exchange LOB
-                double s_bid = (state.best_bid)/scale_factor ;
-                double s_ask = (state.best_ask)/scale_factor ;
-
-                auto it1 = engine.books[event.stock_locate].bid_map.begin() ;
-                auto it2 = engine.books[event.stock_locate].ask_map.begin() ;
-                
-                // Check if maps are empty before reading them
-                double e_bid = 0.0; 
-                if (!engine.books[event.stock_locate].bid_map.empty() ) {
-                    e_bid = static_cast<double>(it1->first) / scale_factor;
-                }
-
-                double e_ask = 0.0;
-                if (!engine.books[event.stock_locate].ask_map.empty()) {
-                    e_ask = static_cast<double>(it2->first) / scale_factor;
-                }
-
-                uint64_t event_ts = event.timestamp;
-                uint64_t exchange_clock = engine.books[event.stock_locate].clock ; // LOB clock time
-
-                // Log the comparison
-                leakage_logger.log_trigger(event_ts, exchange_clock, s_bid, s_ask, e_bid, e_ask);
-
+                // schedule agent reactions : (MM & MOM)
                 for (auto& mm: mm_pool){
                     mm_react(mm, event, state.mid_price, reaction_queue, gen, seq_number,
                         available_order_id, parser_lob.TICK_SIZE) ;
+                    if (mm.agent_clock <= event.timestamp + mm.l1_ns){
+                        // update agent_clock
+                        mm.agent_clock = event.timestamp + mm.l1_ns ;
+                    
+                        mm_react(mm, event, state.mid_price, reaction_queue, gen, seq_number,
+                            available_order_id, parser_lob.TICK_SIZE) ;
+                    }
+                    // otherwise skip.
                 }
                 for (auto& mom: mom_pool){
                     momentum_react(mom, event, state.last_trade_price, reaction_queue, gen, seq_number, 
                         available_order_id, parser_lob.TICK_SIZE) ;
+                    if (mom.agent_clock <= event.timestamp + mom.l1_ns){
+                        // update agent_clock
+                        mom.agent_clock = event.timestamp + mom.l1_ns ;
+                    
+                        momentum_react(mom, event, state.last_trade_price, reaction_queue, gen, seq_number, 
+                            available_order_id, parser_lob.TICK_SIZE) ;
+                    }
+                    // otherwise skip.
                 }
-                
+
                 break;
             }
 
@@ -252,9 +238,18 @@ int main()
             // ------------------------------------------------
             case EventType::S_OUCH:
             {
+                // pending work: 
+                
                 // auto order_id = event.p. ; 
 
                 // auto [tier , idx] = order_id_to_agent_map.find(order_id) ;
+
+                // if(tier == AgentTier)
+                // agent reacts
+                // if (agent.agent_clock <= event.timestamp + agent.l1_ns){
+                //     agent.agent_clock = event.timestamp + agent.l1_ns ;
+                //     // agent react function according to agent type
+                // }
 
                 if (!reaction_queue.empty()) {
                     // uint64_t l1 = get_agent_l1(tier, index);
@@ -269,7 +264,7 @@ int main()
                 }
                 break;
             }
-            
+
             //--------------------------------------------
             //MODE 4 - AgentWakeUP - submit reaction , go to sleep.
             //--------------------------------------------
@@ -280,7 +275,7 @@ int main()
                 zi_react( zi_pool[event.p.wake_up.index] , 
                     state.mid_price, t ,reaction_queue, 
                     price_dist , cancel_dist , gen , seq_number, available_order_id, parser_lob.TICK_SIZE );
-    
+
                 // schedule next wake up
                 schedule_zi_wake_up(zi_pool[event.p.wake_up.index], t, reaction_queue,
                                 wait_dist, gen , seq_number);
@@ -310,6 +305,7 @@ int main()
     auto end = std::chrono::high_resolution_clock::now() ;
     std::chrono::duration<double> d = end - start ;
 
+    std::cout << "\n" << std::endl ;
     std::cout << "Total Events: " << events_processed << std::endl ;
     std::cout << "Total Time: " << d << std::endl ;
     std::cout << "Total ZI agents: " << Config::total_zi << std::endl ;

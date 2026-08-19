@@ -66,4 +66,3 @@ if len(non_zero_price_diffs) > 0:
 plt.tight_layout()
 plt.savefig('lookahead_dual_eval.png', dpi=300)
 print("SUCCESS: Image generated safely and saved as 'lookahead_dual_eval.png'")
-
