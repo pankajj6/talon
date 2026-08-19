@@ -13,6 +13,9 @@ struct MomentumTrader {
     uint32_t trailing_price = 0;
     uint64_t last_action_time = 0;
 
+    // add agent clock
+    uint64_t agent_clock = 0 ; 
+
     // Position tracking to prevent death spirals
     int32_t inventory = 0;
     int32_t max_position = 500; // Stop buying/selling after accumulating +-500 shares

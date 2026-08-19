@@ -28,6 +28,16 @@ if len(df_depth) > target_cols:
 FACTOR = 10000.0  # Scale 10,000 integer units to $1.00 USD
 time_sec = (df_depth["timestamp"] - df_depth["timestamp"].iloc[0]) / 1e9
 
+# --- ADD TO SKIP THE INITIAL WARMUP ---
+valid_idx = time_sec > 8800
+df_depth = df_depth[valid_idx].reset_index(drop=True)
+df_state = df_state[valid_idx].reset_index(drop=True)
+time_sec = time_sec[valid_idx].reset_index(drop=True)
+
+target_cols = 2500
+if len(df_depth) > target_cols:
+    step = len(df_depth) // target_cols
+
 # 2. Define Dollar Price Grid
 price_cols = [c for c in df_depth.columns if "_p" in c]
 valid_prices = df_depth[price_cols].values.flatten()
@@ -89,6 +99,6 @@ plt.legend(loc="upper left", framealpha=0.9)
 plt.grid(True, linestyle=":", alpha=0.4, color=COLOR_GRID)
 
 plt.tight_layout()
-plt.savefig("price_trajectory_human.png", dpi=300)
-print("Saved themed dollar heatmap to price_trajectory_human.png")
+plt.savefig("price_trajectory_human1.png", dpi=300)
+print("Saved themed dollar heatmap to price_trajectory_human1.png")
 plt.show()

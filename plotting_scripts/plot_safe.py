@@ -26,6 +26,13 @@ if len(df) > 1500:
 FACTOR = 10000.0  # Converts 10,000 integer units to $1.00 USD
 df["time_sec"] = (df["timestamp"] - df["timestamp"].iloc[0]) / 1e9
 
+# --- ADD TO SKIP THE INITIAL WARMUP ---
+df = df[df["time_sec"] > 8800].reset_index(drop=True)
+
+# Downsample to 1500 points to keep memory footprint tiny
+if len(df) > 1500:
+    df = df.iloc[::len(df) // 1500].reset_index(drop=True)
+
 price_cols = ["best_bid", "best_ask", "mid_price", "last_trade_price"]
 df[price_cols] = df[price_cols].replace(0, np.nan) / FACTOR
 df["spread_usd"] = df["spread"] / FACTOR
@@ -51,5 +58,5 @@ ax3.set_xlabel("Simulation Time (Seconds)")
 ax3.grid(True, linestyle="--", alpha=0.4, color=PAPER_GRAY)
 
 plt.tight_layout()
-plt.savefig("market_state_stabilized2.png", dpi=300)
-print("SUCCESS: Image generated safely and saved as 'market_state_stabilized2.png'")
+plt.savefig("market_state_stabilized21.png", dpi=300)
+print("SUCCESS: Image generated safely and saved as 'market_state_stabilized21.png'")

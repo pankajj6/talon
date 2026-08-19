@@ -195,13 +195,26 @@ int main()
                 // see here we use event.timestamp not lob.clock , as the market state is updated according to when itch comes , so that is the reason
                 logger.maybe_log(parser_lob, event.timestamp) ;
                 
+                // schedule agent reactions : (MM & MOM)
                 for (auto& mm: mm_pool){
-                    mm_react(mm, event, state.mid_price, reaction_queue, gen, seq_number,
-                        available_order_id, parser_lob.TICK_SIZE) ;
+                    if (mm.agent_clock <= event.timestamp){
+                        // update agent_clock
+                        mm.agent_clock = event.timestamp + mm.l1_ns ;
+                    
+                        mm_react(mm, event, state.mid_price, reaction_queue, gen, seq_number,
+                            available_order_id, parser_lob.TICK_SIZE) ;
+                    }
+                    // otherwise skip.
                 }
                 for (auto& mom: mom_pool){
-                    momentum_react(mom, event, state.last_trade_price, reaction_queue, gen, seq_number, 
-                        available_order_id, parser_lob.TICK_SIZE) ;
+                    if (mom.agent_clock <= event.timestamp){
+                        // update agent_clock
+                        mom.agent_clock = event.timestamp + mom.l1_ns ;
+                    
+                        momentum_react(mom, event, state.last_trade_price, reaction_queue, gen, seq_number, 
+                            available_order_id, parser_lob.TICK_SIZE) ;
+                    }
+                    // otherwise skip.
                 }
                 
                 break;
@@ -221,9 +234,18 @@ int main()
             // ------------------------------------------------
             case EventType::S_OUCH:
             {
+                // pending work: 
+                
                 // auto order_id = event.p. ; 
 
                 // auto [tier , idx] = order_id_to_agent_map.find(order_id) ;
+
+                // if(tier == AgentTier)
+                // agent reacts
+                // if (agent.agent_clock <= event.timestamp){
+                //     agent.agent_clock = event.timestamp + agent.l1_ns ;
+                //     // agent react function according to agent type
+                // }
 
                 if (!reaction_queue.empty()) {
                     // uint64_t l1 = get_agent_l1(tier, index);

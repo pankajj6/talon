@@ -25,6 +25,13 @@ if len(df) > 1500:
 
 df["time_sec"] = (df["timestamp"] - df["timestamp"].iloc[0]) / 1e9
 
+# --- ADD TO SKIP THE INITIAL WARMUP ---
+df = df[df["time_sec"] > 8800].reset_index(drop=True)
+
+# Downsample to 1500 points for fast, clean rendering
+if len(df) > 1500:
+    df = df.iloc[::len(df) // 1500].reset_index(drop=True)
+
 # Create 2-panel liquidity chart
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), sharex=True)
 fig.patch.set_facecolor("white")
@@ -50,5 +57,5 @@ ax2.legend(loc="upper left", framealpha=0.9)
 ax2.grid(True, linestyle="--", alpha=0.4, color=PAPER_GRAY)
 
 plt.tight_layout()
-plt.savefig("liquidity_depth_analysis2.png", dpi=300)
-print("SUCCESS: Liquidity analysis saved to 'liquidity_depth_analysis2.png'")
+plt.savefig("liquidity_depth_analysis21.png", dpi=300)
+print("SUCCESS: Liquidity analysis saved to 'liquidity_depth_analysis21.png'")

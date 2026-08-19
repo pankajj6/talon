@@ -13,6 +13,9 @@ struct ZI {
     uint32_t index = 0 ;
     char side = 'B';
 
+    // add agent clock
+    uint64_t agent_clock = 0 ; 
+
 } ;
 
 void schedule_zi_wake_up

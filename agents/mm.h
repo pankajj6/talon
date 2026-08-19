@@ -18,6 +18,9 @@ struct MM {
     
     // Track the last price we quoted so we can implement Lazy Quoting
     uint32_t last_r_price = 0;
+
+    // add agent clock
+    uint64_t agent_clock = 0 ; 
     
     std::vector<std::pair<uint64_t, char>> active_orders;
     

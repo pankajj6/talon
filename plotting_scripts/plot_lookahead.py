@@ -64,6 +64,6 @@ if len(non_zero_price_diffs) > 0:
     ax2.grid(True, linestyle="--", color=COLOR_GRID, alpha=0.3)
 
 plt.tight_layout()
-plt.savefig('lookahead_dual_eval.png', dpi=300)
-print("SUCCESS: Image generated safely and saved as 'lookahead_dual_eval.png'")
+plt.savefig('lookahead_dual_eval1.png', dpi=300)
+print("SUCCESS: Image generated safely and saved as 'lookahead_dual_eval1.png'")
 
