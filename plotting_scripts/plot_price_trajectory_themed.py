@@ -99,6 +99,6 @@ plt.legend(loc="upper left", framealpha=0.9)
 plt.grid(True, linestyle=":", alpha=0.4, color=COLOR_GRID)
 
 plt.tight_layout()
-plt.savefig("price_trajectory_human1.png", dpi=300)
-print("Saved themed dollar heatmap to price_trajectory_human1.png")
+plt.savefig("price_trajectory_human.png", dpi=300)
+print("Saved themed dollar heatmap to price_trajectory_human.png")
 plt.show()

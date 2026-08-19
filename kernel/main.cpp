@@ -197,7 +197,7 @@ int main()
                 
                 // schedule agent reactions : (MM & MOM)
                 for (auto& mm: mm_pool){
-                    if (mm.agent_clock <= event.timestamp){
+                    if (mm.agent_clock <= event.timestamp + mm.l1_ns){
                         // update agent_clock
                         mm.agent_clock = event.timestamp + mm.l1_ns ;
                     
@@ -207,7 +207,7 @@ int main()
                     // otherwise skip.
                 }
                 for (auto& mom: mom_pool){
-                    if (mom.agent_clock <= event.timestamp){
+                    if (mom.agent_clock <= event.timestamp + mom.l1_ns){
                         // update agent_clock
                         mom.agent_clock = event.timestamp + mom.l1_ns ;
                     
@@ -235,14 +235,14 @@ int main()
             case EventType::S_OUCH:
             {
                 // pending work: 
-                
+
                 // auto order_id = event.p. ; 
 
                 // auto [tier , idx] = order_id_to_agent_map.find(order_id) ;
 
                 // if(tier == AgentTier)
                 // agent reacts
-                // if (agent.agent_clock <= event.timestamp){
+                // if (agent.agent_clock <= event.timestamp + agent.l1_ns){
                 //     agent.agent_clock = event.timestamp + agent.l1_ns ;
                 //     // agent react function according to agent type
                 // }
