@@ -25,8 +25,10 @@ if len(df) > 1500:
 
 df["time_sec"] = (df["timestamp"] - df["timestamp"].iloc[0]) / 1e9
 
-# --- ADD TO SKIP THE INITIAL WARMUP ---
-df = df[df["time_sec"] > 8800].reset_index(drop=True)
+# --- DYNAMIC WARMUP SLICE ---
+# Safely skip the first 10% of the simulation to bypass the empty-book phase
+warmup_cutoff = len(df) // 10
+df = df.iloc[warmup_cutoff:].reset_index(drop=True)
 
 # Downsample to 1500 points for fast, clean rendering
 if len(df) > 1500:

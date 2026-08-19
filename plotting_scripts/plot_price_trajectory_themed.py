@@ -28,11 +28,11 @@ if len(df_depth) > target_cols:
 FACTOR = 10000.0  # Scale 10,000 integer units to $1.00 USD
 time_sec = (df_depth["timestamp"] - df_depth["timestamp"].iloc[0]) / 1e9
 
-# --- ADD TO SKIP THE INITIAL WARMUP ---
-valid_idx = time_sec > 8800
-df_depth = df_depth[valid_idx].reset_index(drop=True)
-df_state = df_state[valid_idx].reset_index(drop=True)
-time_sec = time_sec[valid_idx].reset_index(drop=True)
+# --- DYNAMIC WARMUP SLICE ---
+warmup_cutoff = len(df_depth) // 10
+df_depth = df_depth.iloc[warmup_cutoff:].reset_index(drop=True)
+df_state = df_state.iloc[warmup_cutoff:].reset_index(drop=True)
+time_sec = time_sec.iloc[warmup_cutoff:].reset_index(drop=True)
 
 target_cols = 2500
 if len(df_depth) > target_cols:
