@@ -30,10 +30,11 @@ In a latency-aware market simulation, the order in which events are processed is
 
 An agent reacting to a public market event should only see the market state that was available through that event. At the same time, an order submitted by one agent should not be allowed to affect another instrument's processing timeline simply because both instruments share the same simulation.
 
-TALON addresses these problems with three main mechanisms:
+TALON addresses these problems with four main mechanisms:
 
 - **Global Discrete-Event Scheduler:** For deterministic event ordering by timestamp and sequence number.
 - **Instrument-Level Clocks:** An independent processing clock for each instrument preventing cross-symbol temporal coupling.
+- **Agent-Level Clocks:** Each agent tracks its own point in event time, preventing it from reacting to a cross-instrument or cross-venue event that lies behind him in his timeline.
 - **Kernel Shadow LOB:** A kernel-maintained shadow limit order book representing the public market state available to agents.
 
 The exchange-side book remains authoritative for matching. The shadow book reconstructs the public state event by event before reactive agents are evaluated.
@@ -304,16 +305,15 @@ Starting Simulation Engine...
 [ENGINE RUNNING] LOB Time: 39993742969612 ns | Progress: 99.8921% | Events: 55100000
 
 Total Events: 55156276
-Total Time: 10.1385s
+Total Time: 10.4646s
 Total ZI agents: 100
 Total MMakersagents: 20
 Total Momentum agents: 5
 Simulation Duration(in minutes): 96
 ZI orders per sec: 1000
-Events/sec: 5.44026e+06
+Events/sec: 5.27076e+06
 
 Simulation complete. Output: sim_output.csv , lob_depth.csv
-
 ```
 
 ---
@@ -326,9 +326,9 @@ Performance was evaluated across a full 96-minute trading session ($55.16 \times
 
 | Build Profile | Execution Time | Event Throughput | Description |
 | --- | --- | --- | --- |
-| **`RelWithDebInfo`** | **10.14 s** | **~5.44 Million events/sec** | Peak optimized performance with debug symbols enabled |
-| **`Release`** | **10.59 s** | **~5.18 Million events/sec** | Standard release optimizations |
-| **`MinSizeRel`** | **24.03 s** | **~2.28 Million events/sec** | Size-optimized binary profile |
+| **`RelWithDebInfo`** | **10.46 s** | **~5.27 Million events/sec** | Peak optimized performance with debug symbols enabled |
+| **`Release`** | **10.63 s** | **~5.17 Million events/sec** | Standard release optimizations |
+| **`MinSizeRel`** | **24.19 s** | **~2.27 Million events/sec** | Size-optimized binary profile |
 
 ### Hardware Profiling Metrics (`perf stat`)
 
@@ -336,13 +336,13 @@ Execution efficiency measured via hardware performance counter profiling on the 
 
 | Hardware Metric | Value | Architectural Significance |
 | --- | --- | --- |
-| **Task Clock / Elapsed Time** | 11.15 s / 11.40 s | High core utilization (~98% active CPU bound) |
-| **Cycles** | $51.87 \times 10^9$ | Core CPU clock cycles consumed |
-| **Instructions Executed** | $90.43 \times 10^9$ | Total instructions across $55.16 \times 10^6$ events |
-| **Instructions Per Cycle (IPC)** | **1.74** | Efficient instruction-level parallelism and pipeline flow |
-| **Instructions / Event Step** | **~1,640 inst/event** | Compact execution footprint per event iteration |
-| **Cache References** | $1.016 \times 10^9$ | L1/L2/L3 cache access requests |
-| **Cache Miss Rate** | **14.08%** ($143.16 \times 10^6$) | Strong memory locality from contiguous order pools |
+| **Task Clock / Elapsed Time** | 11.40 s / 11.47 s | High core utilization (~99% active CPU bound) |
+| **Cycles** | 52.64 billion | Core CPU clock cycles consumed |
+| **Instructions Executed** | 93.68 billion | Total instructions across 55.15 million events |
+| **Instructions Per Cycle (IPC)** | **1.78** | Efficient instruction-level parallelism and pipeline flow |
+| **Instructions / Event Step** | **~1,699 inst/event** | Compact execution footprint per event iteration |
+| **Cache References** | 995.31 million | L1/L2/L3 cache access requests |
+| **Cache Miss Rate** | **13.37%** (133.03 million) | Strong memory locality from contiguous order pools |
 
 ### Scalability Under Load
 
@@ -350,11 +350,11 @@ Stress-tested across three population tiers over a 96-minute session, same relea
 
 | Scale Tier | Active Agents | Order Rate | Total Events | Throughput | L1 Miss Rate |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Baseline | 125 (100 ZI, 20 MM, 5 Mom) | 1,000/sec | ~55.16M | **5.38M ev/sec** | 0.91% |
-| Medium | 1,150 (1000 ZI, 100 MM, 50 Mom) | 10,000/sec | ~408.1M | **3.41M ev/sec** | 3.25% |
-| High (Stress) | 10,700 (10k ZI, 500 MM, 200 Mom) | 50,000/sec | ~1.94B | **1.68M ev/sec** | 6.55% |
+| Baseline | 125 (100 ZI, 20 MM, 5 Mom) | 1,000/sec | ~55.16M | **5.27M ev/sec** | 0.89% |
+| Medium | 1,150 (1000 ZI, 100 MM, 50 Mom) | 10,000/sec | ~407.9M | **3.84M ev/sec** | 1.67% |
+| High (Stress) | 10,700 (10k ZI, 500 MM, 200 Mom) | 50,000/sec | ~1.94B | **1.63M ev/sec** | 6.58% |
 
-Throughput degrades sublinearly: an 86x increase in agent population and 50x increase in order rate produces only a 3.2x drop in events/sec, while L1 data-cache load-miss rate climbs from 0.91% to 6.55% as contention grows with the active event footprint.
+Throughput degrades sublinearly: an 86x increase in agent population and 50x increase in order rate produces only a 3.2x drop in events/sec, while L1 data-cache load-miss rate climbs from 0.89% to 6.58% as contention grows with the active event footprint.
 
 ---
 
@@ -365,7 +365,7 @@ Maintaining the shadow LOB prevents reactive agents from observing exchange stat
 | Measurement | Result |
 | --- | --- |
 | Reactive agent evaluations | 14.24 million |
-| Mismatched evaluations | 3.16 million |
+| Mismatched evaluations | 3.17 million |
 | **Look-Ahead Mismatch Rate** | **22.24%** |
 | Average exchange clock lead | 7.11 µs |
 | Maximum temporal drift | ~473 µs |
