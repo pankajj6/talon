@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(sim CXX)
+project(Talon)
 
 # 1. CHANGE OPTIMIZATION LEVEL HERE
 # Options: Debug, Release, RelWithDebInfo, MinSizeRel
