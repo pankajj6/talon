@@ -243,6 +243,8 @@ ouch_*   -> request processing and matching
 │   └── plot_safe.py
 │
 ├── CMakeLists.txt
+├── requirements.txt
+├── setup.sh
 └── README.md
 
 ```
@@ -251,19 +253,9 @@ ouch_*   -> request processing and matching
 
 # Build
 
-TALON requires a C++23 compatible compiler, CMake (>= 3.20), and the Boost headers. 
+TALON requires a C++23 compatible compiler, CMake (>= 3.20), and the Boost headers. Auxiliary plotting scripts require Python 3. 
 
-### 1. Install Dependencies (Ubuntu/Debian)
-You can install the required build tools and Boost libraries with a single command:
-```bash
-sudo apt update
-sudo apt install build-essential cmake libboost-dev git
-
-```
-
-*(Note: Ensure your `g++` or `clang++` version is recent enough to support C++23).*
-
-### 2. Clone the Repository
+### 1. Clone the Repository
 
 Clone TALON along with the `base_lob_engine` submodule:
 
@@ -275,7 +267,30 @@ cd talon
 
 *(If you already cloned the repository without the `--recursive` flag, initialize the submodule by running: `git submodule update --init --recursive`)*
 
-### 3. Configure and Build
+### 2. Install Dependencies (Ubuntu/Debian)
+
+You can install the required build tools and Boost libraries with the provided setup script:
+
+```bash
+chmod +x setup.sh
+./setup.sh
+
+```
+
+*(Note: Ensure your `g++` or `clang++` version is recent enough to support C++23).*
+
+### 3. Install Python Dependencies (For Plotting)
+
+TALON includes Python scripts for analyzing and plotting simulation output. It is recommended to use a virtual environment:
+
+```bash
+python3 -m venv abm_env
+source abm_env/bin/activate
+pip install -r requirements.txt
+
+```
+
+### 4. Configure and Build
 
 TALON's `CMakeLists.txt` automatically targets C++23. For optimal performance profiling, compile using the `RelWithDebInfo` or `Release` profile:
 
