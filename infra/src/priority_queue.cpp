@@ -1,3 +1,7 @@
+// Copyright (C) 2026 Pankaj Jat
+// This file is part of TALON. 
+// Licensed under the GNU AGPL-3.0 , See LICENSE file in the project root for details.
+
 #include <cstdio>
 #include <cstdint>
 #include "events.h"  
