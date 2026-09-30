@@ -396,8 +396,9 @@ Maintaining the shadow LOB prevents reactive agents from observing exchange stat
 
 # Research
 
-> **TALON: A Deterministic Event-Driven Architecture for Latency-Aware Agent-Based Limit Order Book Simulation**
-> Pankaj Jat, SMMG Research (August 2026).
+> **TALON: One Market, Multiple Timelines: A Deterministic Event-Driven
+  Architecture for Latency-Aware Limit Order Book Simulation**
+> Pankaj Jat, SMMG Research (September 2026).
 
 ---
 
