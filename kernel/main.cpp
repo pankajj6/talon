@@ -204,20 +204,25 @@ int main()
                     if (mm.agent_clock <= event.timestamp + mm.l1_ns){
                         // update agent_clock
                         mm.agent_clock = event.timestamp + mm.l1_ns ;
-                    
-                        mm_react(mm, event, kernel_parser_engine, state.mid_price, reaction_queue, gen, seq_number,
-                            available_order_id) ;
                     }
+                    //else{
+                        // agent clock remains same.
+                        // add decision latency l21 and then l22 , which currently is directly done with l2 in mm react already
+                    //}
+                    mm_react(mm, event, kernel_parser_engine, state.mid_price, reaction_queue, gen, seq_number,
+                            available_order_id) ;
+                    
                     // otherwise skip.
                 }
                 for (auto& mom: mom_pool){
                     if (mom.agent_clock <= event.timestamp + mom.l1_ns){
                         // update agent_clock
                         mom.agent_clock = event.timestamp + mom.l1_ns ;
-                    
-                        momentum_react(mom, event, state.last_trade_price, reaction_queue, gen, seq_number, 
-                            available_order_id, parser_lob.TICK_SIZE) ;
                     }
+                    // otherwise same agent clock
+                    momentum_react(mom, event, state.last_trade_price, reaction_queue, gen, seq_number, 
+                            available_order_id, parser_lob.TICK_SIZE) ;
+                    
                     // otherwise skip.
                 }
                 
@@ -246,20 +251,22 @@ int main()
                     if (mm.agent_clock <= event.timestamp + mm.l1_ns){
                         // update agent_clock
                         mm.agent_clock = event.timestamp + mm.l1_ns ;
-                    
-                        mm_react(mm, event, kernel_parser_engine, state.mid_price, reaction_queue, gen, seq_number,
-                            available_order_id) ;
                     }
+                    // else same agent clock
+                    mm_react(mm, event, kernel_parser_engine, state.mid_price, reaction_queue, gen, seq_number,
+                            available_order_id) ;
+                    
                 }
                 else if (tier == AgentTier::MOM){
                     auto mom = mom_pool[event.agent.index] ;
                     if (mom.agent_clock <= event.timestamp + mom.l1_ns){
                         // update agent_clock
                         mom.agent_clock = event.timestamp + mom.l1_ns ;
-                    
-                        momentum_react(mom, event, state.last_trade_price, reaction_queue, gen, seq_number, 
-                            available_order_id, parser_lob.TICK_SIZE) ;
                     }
+                    //
+                    momentum_react(mom, event, state.last_trade_price, reaction_queue, gen, seq_number, 
+                            available_order_id, parser_lob.TICK_SIZE) ;
+                    
                 }
                 else if (tier == AgentTier::ZI){
                     auto zi = zi_pool[event.agent.index] ;
