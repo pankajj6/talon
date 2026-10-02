@@ -212,7 +212,6 @@ int main()
                     mm_react(mm, event, kernel_parser_engine, state.mid_price, reaction_queue, gen, seq_number,
                             available_order_id) ;
                     
-                    // otherwise skip.
                 }
                 for (auto& mom: mom_pool){
                     if (mom.agent_clock <= event.timestamp + mom.l1_ns){
@@ -222,8 +221,6 @@ int main()
                     // otherwise same agent clock
                     momentum_react(mom, event, state.last_trade_price, reaction_queue, gen, seq_number, 
                             available_order_id, parser_lob.TICK_SIZE) ;
-                    
-                    // otherwise skip.
                 }
                 
                 break;
