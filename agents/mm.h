@@ -74,7 +74,7 @@ inline void mm_react(
     }
 
     auto locate = event.stock_locate;
-    auto parser_lob = parser_engine.books[locate] ;
+    auto& parser_lob = parser_engine.books[locate] ;
     auto tick = static_cast<uint32_t>(parser_lob.TICK_SIZE) ;
 
     // 2. Cooldown Check: 5ms 
