@@ -241,10 +241,10 @@ int main()
             case EventType::S_OUCH:
             {
                 // pending work: 
-                auto tier = event.agent.tier ;
+                auto& tier = event.agent.tier ;
 
                 if(tier == AgentTier::MM){
-                    auto mm = mm_pool[event.agent.index] ;
+                    auto& mm = mm_pool[event.agent.index] ;
                     if (mm.agent_clock <= event.timestamp + mm.l1_ns){
                         // update agent_clock
                         mm.agent_clock = event.timestamp + mm.l1_ns ;
@@ -255,7 +255,7 @@ int main()
                     
                 }
                 else if (tier == AgentTier::MOM){
-                    auto mom = mom_pool[event.agent.index] ;
+                    auto& mom = mom_pool[event.agent.index] ;
                     if (mom.agent_clock <= event.timestamp + mom.l1_ns){
                         // update agent_clock
                         mom.agent_clock = event.timestamp + mom.l1_ns ;
@@ -266,7 +266,7 @@ int main()
                     
                 }
                 else if (tier == AgentTier::ZI){
-                    auto zi = zi_pool[event.agent.index] ;
+                    auto& zi = zi_pool[event.agent.index] ;
                     // well zi doesn't care about this private messsages , so skip...
                 }
 
@@ -296,14 +296,15 @@ int main()
             //--------------------------------------------
             case EventType::AgentWakeUP:
             {
-                auto t = event.timestamp ;
+                auto& t = event.timestamp ;
                 // agent react 
-                zi_react( zi_pool[event.p.wake_up.index] , 
+                auto& zi = zi_pool[event.p.wake_up.index] ;
+                zi_react(zi, 
                     state.mid_price, t ,reaction_queue, 
                     price_dist , cancel_dist , gen , seq_number, available_order_id, parser_lob.TICK_SIZE );
     
                 // schedule next wake up
-                schedule_zi_wake_up(zi_pool[event.p.wake_up.index], t, reaction_queue,
+                schedule_zi_wake_up(zi, t, reaction_queue,
                                 wait_dist, gen , seq_number);
 
                 break ;
